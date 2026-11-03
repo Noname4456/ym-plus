@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="@PKG@">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <queries>
+        <package android:name="ru.yandex.music" />
+        <package android:name="com.yandex.music" />
+    </queries>
+    <application
+        android:label="ЯМ Мост"
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+        <!-- Точка запуска: с рабочего стола — экран моста, из островка/карточки vivo — Яндекс Музыка -->
+        <activity android:name="ymbridge.LaunchActivity" android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay" android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name="ymbridge.MainActivity" android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <service
+            android:name="ymbridge.BridgeService"
+            android:label="ЯМ Мост"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+        <service android:name="ymbridge.BrowserService" android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+                <!-- метка «кооперативного» протокола vivo: с ней системный плеер включает «Избранное» и текст -->
+                <action android:name="com.vivo.musicwidgetmix.support.service" />
+            </intent-filter>
+        </service>
+        <receiver android:name="ymbridge.ActionReceiver" android:exported="false" />
+    </application>
+</manifest>
