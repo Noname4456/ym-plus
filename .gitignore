@@ -1,0 +1,12 @@
+# сборка
+android/build/
+android/out/
+# ключи подписи — никогда не публиковать
+*.jks
+*.keystore
+# python
+__pycache__/
+*.pyc
+# прочее
+.DS_Store
+Thumbs.db

@@ -41,11 +41,15 @@ final class Lyrics {
     static Result find(Context c, String key, String artist, String title, long durationMs) {
         if (cached(key)) return get(key);
         Result r = null;
-        try { r = fromLrclib(artist, title, durationMs); } catch (Exception ignored) {}
-        if (r == null) try { r = fromMusixmatch(c, artist, title, durationMs); } catch (Exception ignored) {}
-        if (r == null) try { r = fromNetease(artist, title, durationMs); } catch (Exception ignored) {}
+        try { r = check(fromLrclib(artist, title, durationMs), artist, title); } catch (Exception ignored) {}
+        if (r == null) try { r = check(fromMusixmatch(c, artist, title, durationMs), artist, title); } catch (Exception ignored) {}
+        if (r == null) try { r = check(fromNetease(artist, title, durationMs), artist, title); } catch (Exception ignored) {}
         put(key, r);
         return r;
+    }
+
+    private static Result check(Result r, String artist, String title) {
+        return r != null && plausible(r.lrc, artist, title) ? r : null;
     }
 
     // ---------------- общее ----------------
@@ -79,6 +83,32 @@ final class Lyrics {
         int lines = 0;
         for (String l : lrc.split("\n")) if (STAMP.matcher(l).find() && STAMP.matcher(l).replaceAll("").trim().length() > 0) lines++;
         return lines >= 3;
+    }
+
+    private static final Pattern CYR = Pattern.compile("[а-яА-ЯёЁ]");
+    private static final Pattern FAKE_LINE = Pattern.compile("^[A-Z][a-z]{1,8}( [a-z]{1,8}){1,3}$");
+
+    /**
+     * Отсекаем мусор: Musixmatch вместо закрытого текста присылает выдуманные слова
+     * («Fegozu naxih siz…»), а у русской песни текст не может быть целиком латиницей.
+     */
+    static boolean plausible(String lrc, String artist, String title) {
+        StringBuilder all = new StringBuilder();
+        int lines = 0, fake = 0;
+        for (String l : lrc.split("\n")) {
+            String t = STAMP.matcher(l).replaceAll("").trim();
+            if (t.isEmpty()) continue;
+            lines++;
+            all.append(t).append('\n');
+            if (FAKE_LINE.matcher(t).matches()) fake++;
+        }
+        if (lines < 3) return false;
+        String text = all.toString();
+        boolean cyrSong = CYR.matcher((artist == null ? "" : artist) + (title == null ? "" : title)).find();
+        if (cyrSong && !CYR.matcher(text).find()) return false;
+        // у выдуманного текста почти все строки — 2–4 «слова» без знаков препинания и апострофов
+        if (fake >= lines * 0.8 && !text.matches("(?s).*[,.!?'’-].*")) return false;
+        return true;
     }
 
     private static String cleanTitle(String t) { return t == null ? "" : t.replaceAll("\\s*[(\\[].*?[)\\]]", "").trim(); }
@@ -148,13 +178,20 @@ final class Lyrics {
             JSONObject body = msg.optJSONObject("body");
             JSONObject calls = body != null ? body.optJSONObject("macro_calls") : null;
             if (calls == null) return null;
+            JSONObject mt = calls.optJSONObject("matcher.track.get");
+            JSONObject mtb = mt != null && mt.optJSONObject("message") != null ? mt.getJSONObject("message").optJSONObject("body") : null;
+            JSONObject track = mtb != null ? mtb.optJSONObject("track") : null;
+            if (track == null || track.optInt("instrumental") == 1 || track.optInt("restricted") == 1) return null;
+            if (!sameSong(artist, title, track.optString("artist_name"), track.optString("track_name"))) return null;
             JSONObject sub = calls.optJSONObject("track.subtitles.get");
             JSONObject sm = sub != null ? sub.optJSONObject("message") : null;
             if (sm != null && sm.getJSONObject("header").optInt("status_code") == 401) continue;
             JSONObject sb = sm != null ? sm.optJSONObject("body") : null;
             JSONArray list = sb != null ? sb.optJSONArray("subtitle_list") : null;
             if (list == null || list.length() == 0) return null;
-            String lrc = list.getJSONObject(0).getJSONObject("subtitle").optString("subtitle_body", "");
+            JSONObject st = list.getJSONObject(0).getJSONObject("subtitle");
+            if (st.optInt("restricted") == 1) return null;
+            String lrc = st.optString("subtitle_body", "");
             return synced(lrc) ? new Result(lrc, "Musixmatch") : null;
         }
         return null;
