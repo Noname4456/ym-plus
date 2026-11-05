@@ -20,7 +20,7 @@ D8=${D8:-$BT/d8}
 APKSIGNER=${APKSIGNER:-$BT/apksigner}
 ZIPALIGN=${ZIPALIGN:-$BT/zipalign}
 KEYSTORE=${KEYSTORE:-release.jks}; KS_PASS=${KS_PASS:-changeit}; KS_ALIAS=${KS_ALIAS:-ymbridge}
-VERSION_CODE=${VERSION_CODE:-11}; VERSION_NAME=${VERSION_NAME:-2.1}
+VERSION_CODE=${VERSION_CODE:-12}; VERSION_NAME=${VERSION_NAME:-2.2}
 # «разрешённые» имена пакетов, под которыми OriginOS показывает плеер
 VARIANTS=${VARIANTS:-"apple:com.apple.android.music hiby:com.hiby.music kuwo:cn.kuwo.player kugou:com.kugou.android"}
 

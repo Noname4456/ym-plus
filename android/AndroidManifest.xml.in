@@ -7,6 +7,11 @@
     <queries>
         <package android:name="ru.yandex.music" />
         <package android:name="com.yandex.music" />
+        <!-- чтобы отличать запуск с рабочего стола от запуска из островка -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
     </queries>
     <application
         android:label="ЯМ Мост"
