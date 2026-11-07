@@ -1522,8 +1522,7 @@ def main():
         subprocess.run(["taskkill", "/F", "/IM", EXE_NAME], capture_output=True)
         time.sleep(2)
         flags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-        # --no-proxy-server: Яндекс Музыка ходит напрямую, мимо VPN, работающего как системный прокси
-        subprocess.Popen([EXE, f"--remote-debugging-port={PORT}", "--remote-allow-origins=*", "--no-proxy-server"],
+        subprocess.Popen([EXE, f"--remote-debugging-port={PORT}", "--remote-allow-origins=*"],
                          creationflags=flags, close_fds=True,
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
