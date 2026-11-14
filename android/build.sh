@@ -5,7 +5,7 @@
 #   ANDROID_HOME   — папка Android SDK (по умолчанию ~/Android/Sdk)
 #   KEYSTORE       — ключ подписи (по умолчанию release.jks, создаётся автоматически)
 #   KS_PASS / KS_ALIAS — пароль и имя ключа
-#   VARIANTS       — какие варианты собирать (по умолчанию все четыре)
+#   VARIANTS       — какие варианты собирать (по умолчанию все; baidu — это «ЯМ Островок»)
 #
 # Без SDK можно указать инструменты по отдельности: ANDROID_JAR, AAPT2, DX_JAR (dx.jar вместо d8),
 # SIGNER_JAR (uber-apk-signer.jar вместо apksigner).
@@ -20,9 +20,9 @@ D8=${D8:-$BT/d8}
 APKSIGNER=${APKSIGNER:-$BT/apksigner}
 ZIPALIGN=${ZIPALIGN:-$BT/zipalign}
 KEYSTORE=${KEYSTORE:-release.jks}; KS_PASS=${KS_PASS:-changeit}; KS_ALIAS=${KS_ALIAS:-ymbridge}
-VERSION_CODE=${VERSION_CODE:-12}; VERSION_NAME=${VERSION_NAME:-2.2}
+VERSION_CODE=${VERSION_CODE:-30}; VERSION_NAME=${VERSION_NAME:-3.0}
 # «разрешённые» имена пакетов, под которыми OriginOS показывает плеер
-VARIANTS=${VARIANTS:-"apple:com.apple.android.music hiby:com.hiby.music kuwo:cn.kuwo.player kugou:com.kugou.android"}
+VARIANTS=${VARIANTS:-"apple:com.apple.android.music hiby:com.hiby.music kuwo:cn.kuwo.player kugou:com.kugou.android baidu:com.baidu.BaiduMap"}
 
 [ -f "$ANDROID_JAR" ] || { echo "Не найден android.jar — задайте ANDROID_HOME или ANDROID_JAR"; exit 1; }
 [ -x "$AAPT2" ] || { echo "Не найден aapt2 — задайте ANDROID_HOME или AAPT2"; exit 1; }
@@ -33,7 +33,8 @@ first=1
 for v in $VARIANTS; do
   name=${v%%:*}; pkg=${v#*:}
   mkdir -p "build/$name"
-  sed "s/@PKG@/$pkg/" AndroidManifest.xml.in > "build/$name/AndroidManifest.xml"
+  label="ЯМ Мост"; [ "$pkg" = com.baidu.BaiduMap ] && label="ЯМ Островок"   # Baidu-вариант — это островок
+  sed -e "s/@PKG@/$pkg/" -e "s/@LABEL@/$label/" AndroidManifest.xml.in > "build/$name/AndroidManifest.xml"
   extra=""; [ $first = 1 ] && extra="--java build/gen --custom-package ymbridge"
   "$AAPT2" link -o "build/$name/base.apk" -I "$ANDROID_JAR" --manifest "build/$name/AndroidManifest.xml" build/res.zip \
      --min-sdk-version 26 --target-sdk-version 33 --version-code "$VERSION_CODE" --version-name "$VERSION_NAME" $extra

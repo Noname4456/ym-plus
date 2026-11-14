@@ -7,6 +7,21 @@
     <queries>
         <package android:name="ru.yandex.music" />
         <package android:name="com.yandex.music" />
+        <package android:name="ru.yandex.yandexnavi" />
+        <package android:name="ru.yandex.yandexmaps" />
+        <package android:name="ru.dublgis.dgismobile" />
+        <package android:name="ru.yandex.taxi" />
+        <package android:name="ru.yandex.uber" />
+        <package android:name="ru.yandex.uber_by" />
+        <package android:name="ru.foodfox.client" />
+        <package android:name="com.yandex.lavka" />
+        <package android:name="ru.yandex.market" />
+        <package android:name="ru.ozon.app.android" />
+        <package android:name="com.wildberries.ru" />
+        <package android:name="ru.instamart" />
+        <package android:name="ru.samokat.android" />
+        <package android:name="ru.vkusvill" />
+        <package android:name="ru.citymobil.mobile" />
         <!-- чтобы отличать запуск с рабочего стола от запуска из островка -->
         <intent>
             <action android:name="android.intent.action.MAIN" />
@@ -14,7 +29,7 @@
         </intent>
     </queries>
     <application
-        android:label="ЯМ Мост"
+        android:label="@LABEL@"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
@@ -30,7 +45,7 @@
             android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <service
             android:name="ymbridge.BridgeService"
-            android:label="ЯМ Мост"
+            android:label="@LABEL@"
             android:exported="true"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>

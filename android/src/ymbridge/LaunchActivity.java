@@ -18,7 +18,8 @@ public class LaunchActivity extends Activity {
     protected void onCreate(Bundle saved) {
         super.onCreate(saved);
         Intent target = null;
-        if (!openedByUser()) target = BridgeService.ymLaunchIntent(this);
+        // у «ЯМ Островка» нет музыки — всегда открываем его экран
+        if (!BridgeService.islandOnly(this) && !openedByUser()) target = BridgeService.ymLaunchIntent(this);
         if (target == null) target = new Intent(this, MainActivity.class);
         target.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try { startActivity(target); } catch (Exception ignored) {}

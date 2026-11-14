@@ -69,6 +69,7 @@ public class BridgeService extends NotificationListenerService {
     static volatile boolean hideFailed = false;
     static volatile String diagActions = "", diagCmd = "", diagConn = "";
     static BridgeService instance;
+    IslandMirror island;
 
     private static MediaSession shared;
 
@@ -95,6 +96,24 @@ public class BridgeService extends NotificationListenerService {
     private long notPlayingSince = 0;
     private int pendingLike = -1;                  // что мы попросили у Яндекса, пока он не подтвердил
     private long pendingLikeAt = 0;
+
+    /** В варианте «только островок» убираем метку музыкального приложения vivo, чтобы не мешать основному мосту. */
+    static void enableMusicMarker(Context c) {
+        try {
+            c.getPackageManager().setComponentEnabledSetting(new ComponentName(c, BrowserService.class),
+                    android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, android.content.pm.PackageManager.DONT_KILL_APP);
+        } catch (Exception ignored) {}
+    }
+
+    static void disableMusicMarker(Context c) {
+        try {
+            c.getPackageManager().setComponentEnabledSetting(new ComponentName(c, BrowserService.class),
+                    android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP);
+        } catch (Exception ignored) {}
+    }
+
+    /** Вариант под Baidu Maps — только островок для приложений, без музыкального моста. */
+    static boolean islandOnly(Context c) { return "com.baidu.BaiduMap".equals(c.getPackageName()); }
 
     static boolean isYm(String pkg) {
         for (String p : YM_PACKAGES) if (p.equals(pkg)) return true;
@@ -143,12 +162,14 @@ public class BridgeService extends NotificationListenerService {
     @Override
     public void onListenerConnected() {
         instance = this;
+        if (islandOnly(this)) disableMusicMarker(this); else enableMusicMarker(this);
         nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationChannel ch = new NotificationChannel(CHANNEL, "Яндекс Музыка в системном плеере",
                 NotificationManager.IMPORTANCE_LOW);
         ch.setShowBadge(false);
         ch.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
         nm.createNotificationChannel(ch);
+        island = new IslandMirror(this);
         msm = (MediaSessionManager) getSystemService(Context.MEDIA_SESSION_SERVICE);
         me = new ComponentName(this, BridgeService.class);
         try {
@@ -174,6 +195,7 @@ public class BridgeService extends NotificationListenerService {
     }
 
     private void pick(List<MediaController> list) {
+        if (islandOnly(this)) { status = "Только островок"; return; }
         MediaController found = null;
         if (list != null) for (MediaController c : list) if (isYm(c.getPackageName())) { found = c; break; }
         if (found == null) {
@@ -513,8 +535,14 @@ public class BridgeService extends NotificationListenerService {
     }
 
     @Override
+    public void onNotificationRemoved(StatusBarNotification sbn) {
+        if (island != null) island.onRemoved(sbn);
+    }
+
+    @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
-        if (sbn == null || !isYm(sbn.getPackageName())) return;
+        if (sbn != null && island != null && !isYm(sbn.getPackageName())) island.onPosted(sbn);
+        if (sbn == null || !isYm(sbn.getPackageName()) || islandOnly(this)) return;
         Notification n = sbn.getNotification();
         if (src == null) rescan();
         if (isMediaNotification(n)) hideYm(sbn);
